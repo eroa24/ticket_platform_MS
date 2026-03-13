@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: "ticket_platform_MS"
+  profiles:
+    active: dev
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    com.ticketing: DEBUG

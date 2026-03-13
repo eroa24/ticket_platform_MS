@@ -1,0 +1,19 @@
+apply plugin: 'org.springframework.boot'
+
+dependencies {
+    implementation project(':model')
+    implementation project(':usecase')
+    implementation project(':dynamodb-repository')
+    implementation project(':sqs-publisher')
+    implementation project(':reactive-web')
+    implementation project(':sqs-listener')
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    runtimeOnly 'org.springframework.boot:spring-boot-devtools'
+    
+    // Test dependencies for architecture tests
+    testImplementation "com.tngtech.archunit:archunit-junit5:${archUnitVersion}"
+}
+
+bootJar {
+    archiveFileName = "${rootProject.name}.${archiveExtension.get()}"
+}

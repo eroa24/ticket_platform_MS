@@ -1,0 +1,5 @@
+dependencies {
+    implementation project(':usecase')
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs'
+}
+
