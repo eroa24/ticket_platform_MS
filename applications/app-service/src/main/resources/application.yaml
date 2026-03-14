@@ -3,11 +3,50 @@ spring:
     name: "ticket_platform_MS"
   profiles:
     active: dev
+  cloud:
+    aws:
+      region:
+        static: ${AWS_REGION:us-east-1}
+      credentials:
+        access-key: ${AWS_ACCESS_KEY:local}
+        secret-key: ${AWS_SECRET_KEY:local}
+      sqs:
+        endpoint: ${SQS_ENDPOINT:http://localhost:4566}
 
 server:
   port: 8080
+
+aws:
+  dynamodb:
+    endpoint: ${DYNAMODB_ENDPOINT:http://localhost:8000}
+  region: ${AWS_REGION:us-east-1}
+  accessKey: ${AWS_ACCESS_KEY:local}
+  secretKey: ${AWS_SECRET_KEY:local}
+
+app:
+  sqs:
+    purchase-queue: ${SQS_PURCHASE_QUEUE:purchase-orders-queue}
+  reservation:
+    timeout-minutes: ${RESERVATION_TIMEOUT_MINUTES:10}
+    cleanup-rate-ms: ${RESERVATION_CLEANUP_RATE_MS:60000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    dynamodb:
+      enabled: true
 
 logging:
   level:
     root: INFO
     com.ticketing: DEBUG
+    software.amazon.awssdk: WARN
+    io.awspring: WARN
