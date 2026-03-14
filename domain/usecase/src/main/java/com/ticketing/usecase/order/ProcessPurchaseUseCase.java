@@ -7,9 +7,14 @@ import com.ticketing.model.order.OrderStatus;
 import com.ticketing.model.order.PurchaseOrder;
 import com.ticketing.model.order.gateway.OrderGateway;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import reactor.core.publisher.Mono;
 
 public class ProcessPurchaseUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(ProcessPurchaseUseCase.class);
 
     private final EventGateway eventGateway;
     private final OrderGateway orderGateway;
@@ -37,7 +42,11 @@ public class ProcessPurchaseUseCase {
         return orderGateway.findById(orderId)
                 .switchIfEmpty(Mono.defer(() ->
                         Mono.error(BusinessErrorType.ORDER_NOT_FOUND.build(orderId))))
-                .flatMap(this::processOrder);
+                .flatMap(this::processOrder)
+                .doOnSubscribe(s -> log.info("Processing order: orderId={}", orderId))
+                .doOnSuccess(o -> log.info("Order processed: orderId={}, status={}, ticketStatus={}",
+                        o.id(), o.status(), o.ticketStatus()))
+                .doOnError(e -> log.error("Order processing failed: orderId={}, error={}", orderId, e.getMessage()));
     }
 
     private Mono<PurchaseOrder> processOrder(PurchaseOrder order) {

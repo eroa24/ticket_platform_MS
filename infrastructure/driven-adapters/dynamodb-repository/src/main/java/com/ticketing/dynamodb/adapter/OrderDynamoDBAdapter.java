@@ -102,6 +102,8 @@ public class OrderDynamoDBAdapter implements OrderGateway {
         var updateRequest = buildConditionalStatusUpdate(order, expectedVersion);
         return Mono.fromFuture(() -> dynamoDbClient.updateItem(updateRequest))
                 .map(response -> buildOrderFromUpdateResponse(response.attributes()))
+                .doOnSuccess(o -> log.info("Order status updated: orderId={}, status={}, ticketStatus={}",
+                        o.id(), o.status(), o.ticketStatus()))
                 .onErrorResume(ConditionalCheckFailedException.class, e ->
                         Mono.defer(() -> Mono.error(BusinessErrorType.OPTIMISTIC_LOCK_FAILURE.build())));
     }

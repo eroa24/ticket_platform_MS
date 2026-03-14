@@ -67,6 +67,8 @@ public class EventDynamoDBAdapter implements EventGateway {
         var updateRequest = buildConditionalUpdateRequest(eventId, ticketsDelta, expectedVersion);
         return Mono.fromFuture(() -> dynamoDbClient.updateItem(updateRequest))
                 .map(response -> buildEventFromUpdateResponse(response.attributes(), eventId))
+                .doOnSuccess(e -> log.info("Tickets updated: eventId={}, delta={}, availableTickets={}",
+                        eventId, ticketsDelta, e.availableTickets()))
                 .onErrorResume(ConditionalCheckFailedException.class, e ->
                         Mono.defer(() -> Mono.error(BusinessErrorType.OPTIMISTIC_LOCK_FAILURE.build())));
     }

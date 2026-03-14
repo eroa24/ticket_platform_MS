@@ -13,10 +13,15 @@ import com.ticketing.model.order.PurchaseOrder;
 import com.ticketing.model.order.gateway.OrderGateway;
 import com.ticketing.model.order.gateway.OrderMessageGateway;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 public class InitiatePurchaseUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(InitiatePurchaseUseCase.class);
 
     private static final int MAX_RETRY_ATTEMPTS = 3;
     private static final Duration RETRY_INITIAL_BACKOFF = Duration.ofMillis(100);
@@ -51,7 +56,11 @@ public class InitiatePurchaseUseCase {
         return validateRequest(eventId, userId, quantity, idempotencyKey)
                 .then(checkIdempotency(idempotencyKey))
                 .switchIfEmpty(createNewOrder(eventId, userId, quantity, idempotencyKey)
-                        .retryWhen(retryOnOptimisticLockFailure()));
+                        .retryWhen(retryOnOptimisticLockFailure()))
+                .doOnSubscribe(s -> log.info("Purchase initiated: eventId={}, quantity={}", eventId, quantity))
+                .doOnSuccess(order -> log.info("Purchase reserved: orderId={}, eventId={}, status={}, ticketStatus={}",
+                        order.id(), order.eventId(), order.status(), order.ticketStatus()))
+                .doOnError(e -> log.error("Purchase failed: eventId={}, error={}", eventId, e.getMessage()));
     }
 
     private Mono<Void> validateRequest(String eventId, String userId,
