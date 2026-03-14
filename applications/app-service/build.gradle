@@ -7,6 +7,7 @@ dependencies {
     implementation project(':sqs-publisher')
     implementation project(':reactive-web')
     implementation project(':sqs-listener')
+    implementation project(':secrets-manager')
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     //runtimeOnly 'org.springframework.boot:spring-boot-devtools'

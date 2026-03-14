@@ -6,8 +6,9 @@ import com.ticketing.sqs.dto.PurchaseMessage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import com.ticketing.model.secrets.AppSecrets;
 
 import io.awspring.cloud.sqs.operations.SqsTemplate;
 import reactor.core.publisher.Mono;
@@ -20,10 +21,9 @@ public class SQSOrderPublisher implements OrderMessageGateway {
     private final SqsTemplate sqsTemplate;
     private final String queueName;
 
-    public SQSOrderPublisher(SqsTemplate sqsTemplate,
-                             @Value("${app.sqs.purchase-queue}") String queueName) {
+    public SQSOrderPublisher(SqsTemplate sqsTemplate, AppSecrets appSecrets) {
         this.sqsTemplate = sqsTemplate;
-        this.queueName = queueName;
+        this.queueName = appSecrets.purchaseQueueName();
     }
 
     @Override

@@ -3,14 +3,18 @@
 # Script de inicialización de LocalStack
 # =====================================================
 # Se ejecuta automáticamente cuando LocalStack está listo.
-# Crea la cola SQS necesaria para el sistema de tickets.
+# Crea los recursos AWS necesarios para el sistema de tickets:
+#   - Cola SQS principal + DLQ con redrive policy
+#   - Secret con configuración centralizada de la aplicación
 # =====================================================
 
 echo "========================================"
-echo "  Inicializando LocalStack - SQS Queues"
+echo "  Inicializando LocalStack"
 echo "========================================"
 
-# Crear la cola principal de órdenes de compra
+# -----------------------------------------------
+# SQS: Crear cola principal de órdenes de compra
+# -----------------------------------------------
 awslocal sqs create-queue \
     --queue-name purchase-orders-queue \
     --attributes '{
@@ -42,6 +46,25 @@ awslocal sqs set-queue-attributes \
     --attributes "{\"RedrivePolicy\":\"{\\\"maxReceiveCount\\\":\\\"3\\\",\\\"deadLetterTargetArn\\\":\\\"${DLQ_ARN}\\\"}\"}"
 
 echo "✅ Redrive policy configurada (max 3 reintentos → DLQ)"
+
+# -----------------------------------------------
+# Secrets Manager: Crear secret de configuración
+# -----------------------------------------------
+# Contiene configuración operacional que varía por entorno.
+# La app lee estos valores al arrancar desde SecretsManagerAdapter.
+#
+# purchaseQueueName         → nombre de la cola SQS (evita hardcodear env vars)
+# rateLimitRequestsPerMinute → límite de peticiones por IP por minuto
+# -----------------------------------------------
+awslocal secretsmanager create-secret \
+    --name "/ticket-platform/config" \
+    --description "Configuracion operacional del servicio de tickets" \
+    --secret-string '{
+        "purchaseQueueName": "purchase-orders-queue",
+        "rateLimitRequestsPerMinute": 60
+    }'
+
+echo "✅ Secret '/ticket-platform/config' creado exitosamente"
 
 echo "========================================"
 echo "  LocalStack listo!"

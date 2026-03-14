@@ -20,3 +20,6 @@ project(':reactive-web').projectDir = file('infrastructure/entry-points/reactive
 
 include ':sqs-listener'
 project(':sqs-listener').projectDir = file('infrastructure/entry-points/sqs-listener')
+
+include ':secrets-manager'
+project(':secrets-manager').projectDir = file('infrastructure/driven-adapters/secrets-manager')

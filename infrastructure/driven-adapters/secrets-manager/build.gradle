@@ -1,0 +1,6 @@
+dependencies {
+    implementation project(':model')
+    implementation 'software.amazon.awssdk:secretsmanager'
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.slf4j:slf4j-api'
+}

@@ -4,7 +4,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -14,6 +13,7 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 
+import com.ticketing.model.secrets.AppSecrets;
 import com.ticketing.web.dto.ErrorResponse;
 
 import reactor.core.publisher.Mono;
@@ -40,11 +40,9 @@ public class RateLimiterFilter implements WebFilter {
     private final int maxRequestsPerWindow;
     private final JsonMapper jsonMapper;
 
-    public RateLimiterFilter(
-            JsonMapper jsonMapper,
-            @Value("${app.rate-limit.requests-per-minute:5}") int maxRequestsPerWindow) {
+    public RateLimiterFilter(JsonMapper jsonMapper, AppSecrets appSecrets) {
         this.jsonMapper = jsonMapper;
-        this.maxRequestsPerWindow = maxRequestsPerWindow;
+        this.maxRequestsPerWindow = appSecrets.rateLimitRequestsPerMinute();
     }
 
     @Override

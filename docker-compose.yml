@@ -3,7 +3,7 @@
 # =====================================================
 # Servicios:
 #   1. dynamodb-local  → Amazon DynamoDB local (puerto 8000)
-#   2. localstack      → SQS simulado (puerto 4566)
+#   2. localstack      → SQS + Secrets Manager simulados (puerto 4566)
 #   3. app             → Microservicio Spring Boot (puerto 8080)
 # =====================================================
 
@@ -31,24 +31,25 @@ services:
       - ticketing-net
 
   # -----------------------------------------------
-  # LocalStack (SQS)
+  # LocalStack (SQS + Secrets Manager)
   # -----------------------------------------------
-  # Simula servicios AWS localmente. Solo habilitamos SQS.
-  # Beneficio: Cola de mensajes real sin infraestructura AWS.
-  # El script init-localstack.sh crea la cola automáticamente al arrancar.
+  # Simula servicios AWS localmente.
+  # SQS: cola de mensajes para órdenes de compra.
+  # Secrets Manager: almacén central de configuración por entorno.
+  # El script init-localstack.sh crea los recursos automáticamente al arrancar.
   localstack:
     image: localstack/localstack:latest
     container_name: localstack
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=sqs
+      - SERVICES=sqs,secretsmanager
       - AWS_DEFAULT_REGION=us-east-1
       - DOCKER_HOST=unix:///var/run/docker.sock
     volumes:
       - "./infra/localstack/init-localstack.sh:/etc/localstack/init/ready.d/init-localstack.sh"
     healthcheck:
-      test: ["CMD-SHELL", "awslocal sqs list-queues || exit 1"]
+      test: ["CMD-SHELL", "awslocal sqs list-queues && awslocal secretsmanager list-secrets || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -59,8 +60,10 @@ services:
   # -----------------------------------------------
   # Ticket Platform MS (App)
   # -----------------------------------------------
-  # El microservicio Spring Boot. Espera a que DynamoDB y SQS estén healthy
-  # antes de arrancar (depends_on + condition: service_healthy).
+  # El microservicio Spring Boot. Espera a que DynamoDB y LocalStack estén
+  # healthy antes de arrancar (depends_on + condition: service_healthy).
+  # purchaseQueueName y rateLimitRequestsPerMinute se leen desde Secrets Manager
+  # en lugar de variables de entorno directas.
   app:
     build:
       context: .
@@ -71,10 +74,11 @@ services:
     environment:
       - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
       - SQS_ENDPOINT=http://localstack:4566
+      - SECRETS_MANAGER_ENDPOINT=http://localstack:4566
+      - APP_SECRET_NAME=/ticket-platform/config
       - AWS_REGION=us-east-1
       - AWS_ACCESS_KEY=local
       - AWS_SECRET_KEY=local
-      - SQS_PURCHASE_QUEUE=purchase-orders-queue
       - RESERVATION_TIMEOUT_MINUTES=10
       - RESERVATION_CLEANUP_RATE_MS=60000
     depends_on:

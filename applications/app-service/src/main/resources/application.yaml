@@ -19,21 +19,17 @@ server:
 aws:
   dynamodb:
     endpoint: ${DYNAMODB_ENDPOINT:http://localhost:8000}
+  secretsmanager:
+    endpoint: ${SECRETS_MANAGER_ENDPOINT:http://localhost:4566}
+    secret-name: ${APP_SECRET_NAME:/ticket-platform/config}
   region: ${AWS_REGION:us-east-1}
   accessKey: ${AWS_ACCESS_KEY:local}
   secretKey: ${AWS_SECRET_KEY:local}
 
 app:
-  sqs:
-    purchase-queue: ${SQS_PURCHASE_QUEUE:purchase-orders-queue}
   reservation:
     timeout-minutes: ${RESERVATION_TIMEOUT_MINUTES:10}
     cleanup-rate-ms: ${RESERVATION_CLEANUP_RATE_MS:60000}
-  rate-limit:
-    # Maximum API requests per minute per client IP.
-    # Configurable per environment: lower in production, higher in dev/testing.
-    # Production: 60 (1 req/sec average) | Dev: 1000
-    requests-per-minute: ${RATE_LIMIT_REQUESTS_PER_MINUTE:5}
 
 management:
   endpoints:
