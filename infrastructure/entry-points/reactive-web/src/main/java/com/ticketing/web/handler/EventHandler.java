@@ -5,6 +5,7 @@ import com.ticketing.usecase.event.CreateEventUseCase;
 import com.ticketing.usecase.event.GetEventAvailabilityUseCase;
 import com.ticketing.web.dto.CreateEventRequest;
 import com.ticketing.web.dto.EventResponse;
+import com.ticketing.web.validation.RequestValidator;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
@@ -17,15 +18,19 @@ public class EventHandler {
 
     private final CreateEventUseCase createEventUseCase;
     private final GetEventAvailabilityUseCase getEventAvailabilityUseCase;
+    private final RequestValidator validator;
 
     public EventHandler(CreateEventUseCase createEventUseCase,
-                        GetEventAvailabilityUseCase getEventAvailabilityUseCase) {
+                        GetEventAvailabilityUseCase getEventAvailabilityUseCase,
+                        RequestValidator validator) {
         this.createEventUseCase = createEventUseCase;
         this.getEventAvailabilityUseCase = getEventAvailabilityUseCase;
+        this.validator = validator;
     }
 
     public Mono<ServerResponse> createEvent(ServerRequest request) {
         return request.bodyToMono(CreateEventRequest.class)
+                .flatMap(validator::validate)
                 .map(this::toDomainEvent)
                 .flatMap(createEventUseCase::execute)
                 .map(EventResponse::from)
