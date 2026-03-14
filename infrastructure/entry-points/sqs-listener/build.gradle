@@ -1,5 +1,6 @@
 dependencies {
     implementation project(':usecase')
+    implementation project(':model')
     implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs'
+    implementation 'io.projectreactor:reactor-core'
 }
-
