@@ -1,5 +1,6 @@
 dependencies {
     implementation project(':model')
     implementation 'io.projectreactor:reactor-core'
+    implementation 'org.slf4j:slf4j-api'
     testImplementation 'io.projectreactor:reactor-test'
 }

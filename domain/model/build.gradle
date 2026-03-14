@@ -1,4 +1,9 @@
+plugins {
+    id 'java-library'
+}
+
 dependencies {
+    api 'io.projectreactor:reactor-core'
     compileOnly "org.projectlombok:lombok:${lombokVersion}"
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
     testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
