@@ -13,6 +13,7 @@ public class OrderEntity {
     private String userId;
     private int quantity;
     private String status;
+    private String ticketStatus;
     private String idempotencyKey;
     private String createdAt;
     private String updatedAt;
@@ -34,6 +35,9 @@ public class OrderEntity {
     @DynamoDbSecondaryPartitionKey(indexNames = "status-createdAt-index")
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getTicketStatus() { return ticketStatus; }
+    public void setTicketStatus(String ticketStatus) { this.ticketStatus = ticketStatus; }
 
     @DynamoDbSecondaryPartitionKey(indexNames = "idempotencyKey-index")
     public String getIdempotencyKey() { return idempotencyKey; }

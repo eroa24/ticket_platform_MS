@@ -2,6 +2,7 @@ package com.ticketing.web.handler;
 
 import com.ticketing.usecase.order.GetOrderStatusUseCase;
 import com.ticketing.usecase.order.InitiatePurchaseUseCase;
+import com.ticketing.web.dto.OrderResponse;
 import com.ticketing.web.dto.PurchaseRequest;
 
 import org.springframework.stereotype.Component;
@@ -26,12 +27,14 @@ public class OrderHandler {
         return request.bodyToMono(PurchaseRequest.class)
                 .flatMap(req -> initiatePurchaseUseCase.execute(
                         req.eventId(), req.userId(), req.quantity(), req.idempotencyKey()))
+                .map(OrderResponse::from)
                 .flatMap(order -> ServerResponse.status(202).bodyValue(order));
     }
 
     public Mono<ServerResponse> getOrderStatus(ServerRequest request) {
         var orderId = request.pathVariable("id");
         return getOrderStatusUseCase.execute(orderId)
+                .map(OrderResponse::from)
                 .flatMap(order -> ServerResponse.ok().bodyValue(order));
     }
 }

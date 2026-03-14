@@ -1,5 +1,6 @@
 package com.ticketing.usecase.order;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -7,13 +8,19 @@ import com.ticketing.model.common.DomainConstants;
 import com.ticketing.model.event.Event;
 import com.ticketing.model.event.gateway.EventGateway;
 import com.ticketing.model.exception.BusinessErrorType;
+import com.ticketing.model.exception.BusinessException;
 import com.ticketing.model.order.PurchaseOrder;
 import com.ticketing.model.order.gateway.OrderGateway;
 import com.ticketing.model.order.gateway.OrderMessageGateway;
 
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
 public class InitiatePurchaseUseCase {
+
+    private static final int MAX_RETRY_ATTEMPTS = 3;
+    private static final Duration RETRY_INITIAL_BACKOFF = Duration.ofMillis(100);
+    private static final Duration RETRY_MAX_BACKOFF = Duration.ofSeconds(1);
 
     private final EventGateway eventGateway;
     private final OrderGateway orderGateway;
@@ -28,17 +35,23 @@ public class InitiatePurchaseUseCase {
     }
 
     /**
+     * Initiates a ticket purchase by reserving availability and enqueuing for async processing.
+     *
+     * Retries automatically on optimistic lock conflicts (concurrent purchase attempts).
+     * Idempotency: returns the existing order if the idempotencyKey was already processed.
+     *
      * @param eventId        the event to purchase tickets for
      * @param userId         the buyer's identifier
-     * @param quantity       the number of tickets to purchase
-     * @param idempotencyKey client-provided key to prevent duplicates
-     * @return the created purchase order with PENDING status
+     * @param quantity       the number of tickets to purchase (1 to MAX_TICKETS_PER_PURCHASE)
+     * @param idempotencyKey client-provided key to prevent duplicate orders
+     * @return the created (or existing) purchase order with PENDING status / RESERVED tickets
      */
     public Mono<PurchaseOrder> execute(String eventId, String userId,
                                        int quantity, String idempotencyKey) {
         return validateRequest(eventId, userId, quantity, idempotencyKey)
                 .then(checkIdempotency(idempotencyKey))
-                .switchIfEmpty(createNewOrder(eventId, userId, quantity, idempotencyKey));
+                .switchIfEmpty(createNewOrder(eventId, userId, quantity, idempotencyKey)
+                        .retryWhen(retryOnOptimisticLockFailure()));
     }
 
     private Mono<Void> validateRequest(String eventId, String userId,
@@ -94,5 +107,19 @@ public class InitiatePurchaseUseCase {
     private Mono<PurchaseOrder> enqueueAndReturn(PurchaseOrder savedOrder) {
         return orderMessageGateway.sendPurchaseRequest(savedOrder)
                 .thenReturn(savedOrder);
+    }
+
+    /**
+     * Retry strategy for concurrent write conflicts on DynamoDB.
+     * Uses exponential backoff to reduce contention under high load.
+     * Only retries on OPTIMISTIC_LOCK_FAILURE — all other errors propagate immediately.
+     */
+    private Retry retryOnOptimisticLockFailure() {
+        return Retry.backoff(MAX_RETRY_ATTEMPTS, RETRY_INITIAL_BACKOFF)
+                .maxBackoff(RETRY_MAX_BACKOFF)
+                .filter(e -> e instanceof BusinessException be
+                        && be.errorType() == BusinessErrorType.OPTIMISTIC_LOCK_FAILURE)
+                .onRetryExhaustedThrow((spec, signal) ->
+                        BusinessErrorType.OPTIMISTIC_LOCK_FAILURE.build());
     }
 }

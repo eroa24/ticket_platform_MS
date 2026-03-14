@@ -7,6 +7,7 @@ import com.ticketing.dynamodb.entity.OrderEntity;
 import com.ticketing.model.event.Event;
 import com.ticketing.model.order.OrderStatus;
 import com.ticketing.model.order.PurchaseOrder;
+import com.ticketing.model.ticket.TicketStatus;
 
 public final class DynamoDBMapper {
 
@@ -42,6 +43,7 @@ public final class DynamoDBMapper {
         entity.setUserId(order.userId());
         entity.setQuantity(order.quantity());
         entity.setStatus(order.status().name());
+        entity.setTicketStatus(order.ticketStatus().name());
         entity.setIdempotencyKey(order.idempotencyKey());
         entity.setCreatedAt(order.createdAt().toString());
         entity.setUpdatedAt(order.updatedAt().toString());
@@ -56,9 +58,17 @@ public final class DynamoDBMapper {
                 entity.getUserId(),
                 entity.getQuantity(),
                 OrderStatus.valueOf(entity.getStatus()),
+                parseTicketStatus(entity.getTicketStatus()),
                 entity.getIdempotencyKey(),
                 Instant.parse(entity.getCreatedAt()),
                 Instant.parse(entity.getUpdatedAt()),
                 entity.getVersion());
+    }
+
+    /**
+     * Parses ticketStatus with a safe fallback for records created before this field was introduced.
+     */
+    private static TicketStatus parseTicketStatus(String ticketStatus) {
+        return ticketStatus != null ? TicketStatus.valueOf(ticketStatus) : TicketStatus.RESERVED;
     }
 }

@@ -4,6 +4,7 @@ import com.ticketing.model.event.Event;
 import com.ticketing.usecase.event.CreateEventUseCase;
 import com.ticketing.usecase.event.GetEventAvailabilityUseCase;
 import com.ticketing.web.dto.CreateEventRequest;
+import com.ticketing.web.dto.EventResponse;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
@@ -27,17 +28,21 @@ public class EventHandler {
         return request.bodyToMono(CreateEventRequest.class)
                 .map(this::toDomainEvent)
                 .flatMap(createEventUseCase::execute)
+                .map(EventResponse::from)
                 .flatMap(event -> ServerResponse.status(201).bodyValue(event));
     }
 
     public Mono<ServerResponse> getAvailability(ServerRequest request) {
         var eventId = request.pathVariable("id");
         return getEventAvailabilityUseCase.execute(eventId)
+                .map(EventResponse::from)
                 .flatMap(event -> ServerResponse.ok().bodyValue(event));
     }
 
     public Mono<ServerResponse> getAllEvents(ServerRequest request) {
-        return ServerResponse.ok().body(getEventAvailabilityUseCase.findAll(), Event.class);
+        return ServerResponse.ok().body(
+                getEventAvailabilityUseCase.findAll().map(EventResponse::from),
+                EventResponse.class);
     }
 
     private Event toDomainEvent(CreateEventRequest req) {

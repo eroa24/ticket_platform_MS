@@ -13,12 +13,19 @@ import com.ticketing.model.exception.BusinessException;
 import com.ticketing.web.dto.ErrorResponse;
 
 import reactor.core.publisher.Mono;
+import tools.jackson.databind.json.JsonMapper;
 
 @Component
 @Order(-2)
 public class GlobalExceptionHandler implements WebExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    private final JsonMapper jsonMapper;
+
+    public GlobalExceptionHandler(JsonMapper jsonMapper) {
+        this.jsonMapper = jsonMapper;
+    }
 
     @Override
     public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
@@ -51,15 +58,18 @@ public class GlobalExceptionHandler implements WebExceptionHandler {
     }
 
     private Mono<Void> writeResponse(ServerWebExchange exchange, HttpStatus status, ErrorResponse error) {
-        exchange.getResponse().setStatusCode(status);
-        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-        var buffer = exchange.getResponse().bufferFactory()
-                .wrap(toJson(error).getBytes());
-        return exchange.getResponse().writeWith(Mono.just(buffer));
-    }
-
-    private String toJson(ErrorResponse error) {
-        return "{\"code\":\"%s\",\"message\":\"%s\",\"timestamp\":\"%s\"}"
-                .formatted(error.code(), error.message(), error.timestamp());
+        return Mono.defer(() -> {
+            try {
+                var response = exchange.getResponse();
+                response.setStatusCode(status);
+                response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+                var json = jsonMapper.writeValueAsBytes(error);
+                var buffer = response.bufferFactory().wrap(json);
+                return response.writeWith(Mono.just(buffer));
+            } catch (Exception e) {
+                log.error("Failed to serialize error response", e);
+                return Mono.error(e);
+            }
+        });
     }
 }

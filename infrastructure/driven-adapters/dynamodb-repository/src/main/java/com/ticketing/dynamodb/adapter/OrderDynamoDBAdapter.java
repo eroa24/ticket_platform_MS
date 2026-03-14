@@ -9,6 +9,7 @@ import com.ticketing.model.exception.BusinessErrorType;
 import com.ticketing.model.order.OrderStatus;
 import com.ticketing.model.order.PurchaseOrder;
 import com.ticketing.model.order.gateway.OrderGateway;
+import com.ticketing.model.ticket.TicketStatus;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,11 +110,12 @@ public class OrderDynamoDBAdapter implements OrderGateway {
         return UpdateItemRequest.builder()
                 .tableName(TABLE_NAME)
                 .key(Map.of("id", AttributeValue.builder().s(order.id()).build()))
-                .updateExpression("SET #s = :newStatus, updatedAt = :updatedAt, version = version + :one")
+                .updateExpression("SET #s = :newStatus, ticketStatus = :ticketStatus, updatedAt = :updatedAt, version = version + :one")
                 .conditionExpression("version = :expectedVersion")
                 .expressionAttributeNames(Map.of("#s", "status"))
                 .expressionAttributeValues(Map.of(
                         ":newStatus", AttributeValue.builder().s(order.status().name()).build(),
+                        ":ticketStatus", AttributeValue.builder().s(order.ticketStatus().name()).build(),
                         ":updatedAt", AttributeValue.builder().s(Instant.now().toString()).build(),
                         ":one", AttributeValue.builder().n("1").build(),
                         ":expectedVersion", AttributeValue.builder().n(String.valueOf(expectedVersion)).build()))
@@ -122,12 +124,16 @@ public class OrderDynamoDBAdapter implements OrderGateway {
     }
 
     private PurchaseOrder buildOrderFromUpdateResponse(Map<String, AttributeValue> attrs) {
+        var ticketStatusAttr = attrs.get("ticketStatus");
         return new PurchaseOrder(
                 attrs.get("id").s(),
                 attrs.get("eventId").s(),
                 attrs.get("userId").s(),
                 Integer.parseInt(attrs.get("quantity").n()),
                 OrderStatus.valueOf(attrs.get("status").s()),
+                ticketStatusAttr != null
+                        ? TicketStatus.valueOf(ticketStatusAttr.s())
+                        : TicketStatus.RESERVED,
                 attrs.get("idempotencyKey").s(),
                 Instant.parse(attrs.get("createdAt").s()),
                 Instant.parse(attrs.get("updatedAt").s()),
