@@ -6,10 +6,10 @@ Infrastructure as Code for the Ticket Platform microservice on AWS.
 
 ```
 Internet → ALB (HTTP/HTTPS) → ECS Fargate (private subnets)
-                                    ↕ DynamoDB (events, orders)
-                                    ↕ SQS (purchase-orders-queue + DLQ)
-                                    ↕ SSM Parameter Store (rate-limit, timeout)
-                                    → CloudWatch (logs, alarms)
+↕ DynamoDB (events, orders)
+↕ SQS (purchase-orders-queue + DLQ)
+↕ SSM Parameter Store (rate-limit, timeout)
+→ CloudWatch (logs, alarms)
 ECR → (image pull) → ECS Fargate
 IAM Task Role → DynamoDB + SQS + SSM
 ```
