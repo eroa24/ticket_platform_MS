@@ -23,8 +23,8 @@ dynamodb_deletion_protection    = false
 rate_limit_requests_per_minute = 1000
 reservation_timeout_minutes    = 10
 
-# ALB: HTTP only (no certificate)
+# ALB: HTTP
 acm_certificate_arn = ""
 
-# CloudWatch: no SNS alerts in dev
+# CloudWatch
 alarm_actions = []

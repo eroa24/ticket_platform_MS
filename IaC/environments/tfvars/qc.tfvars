@@ -15,16 +15,16 @@ desired_count = 1
 min_capacity  = 1
 max_capacity  = 2
 
-# DynamoDB (PITR activado para comportamiento similar a pdn)
+# DynamoDB
 dynamodb_point_in_time_recovery = true
 dynamodb_deletion_protection    = false
 
-# App config (throttle más conservador que dev para validar comportamiento)
+# App config
 rate_limit_requests_per_minute = 200
 reservation_timeout_minutes    = 10
 
-# ALB: HTTP only (agregar ARN si se dispone de certificado)
+# ALB: HTTP
 acm_certificate_arn = ""
 
-# CloudWatch: agregar ARN de SNS si se quieren alertas en QC
+# CloudWatch
 alarm_actions = []

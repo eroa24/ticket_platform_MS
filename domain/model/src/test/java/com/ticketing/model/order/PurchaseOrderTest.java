@@ -69,6 +69,16 @@ class PurchaseOrderTest {
     }
 
     @Test
+    void withStatus_complimentary_setsTicketStatusToComplimentary() {
+        var order = PurchaseOrder.create(ID, EVENT_ID, USER_ID, QUANTITY, IDEMPOTENCY_KEY);
+
+        var complimentary = order.withStatus(OrderStatus.COMPLIMENTARY);
+
+        assertThat(complimentary.status()).isEqualTo(OrderStatus.COMPLIMENTARY);
+        assertThat(complimentary.ticketStatus()).isEqualTo(TicketStatus.COMPLIMENTARY);
+    }
+
+    @Test
     void isReservationExpired_returnsTrueWhenCreatedMoreThanTimeoutAgo() {
         var expiredOrder = new PurchaseOrder(
                 ID, EVENT_ID, USER_ID, QUANTITY,

@@ -49,6 +49,8 @@ public class ProcessPurchaseUseCase {
     }
 
     private Mono<PurchaseOrder> determineOrderFate(PurchaseOrder order) {
+        // [INTEGRATION POINT]: Aquí es donde se debería consultar a la pasarela de pagos (Payment Gateway)
+        // para verificar si la transacción fue exitosa antes de decidir si confirmar o rechazar.
         return order.isReservationExpired(DomainConstants.RESERVATION_TIMEOUT_MINUTES)
                 ? validateAndExpire(order)
                 : validateAndConfirm(order);

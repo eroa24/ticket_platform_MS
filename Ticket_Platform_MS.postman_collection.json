@@ -1,0 +1,297 @@
+{
+	"info": {
+		"_postman_id": "b439404b-8dba-4acb-bc2f-0b57b91c2d77",
+		"name": "Ticket Platform MS",
+		"description": "Colección para pruebas locales del microservicio de Tickets",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "44723137",
+		"_collection_link": "https://edilbertoroa.postman.co/workspace/cc5cf5a5-4d68-4d65-87e6-7c426775245f/collection/44723137-b439404b-8dba-4acb-bc2f-0b57b91c2d77?action=share&source=collection_link&creator=44723137"
+	},
+	"item": [
+		{
+			"name": "System",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/actuator/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"actuator",
+								"health"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Events",
+			"item": [
+				{
+					"name": "Crear Evento",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    ",
+									"    if (response.id) {",
+									"        pm.collectionVariables.set(\"last_event_id\", response.id);",
+									"        console.log(\"✅ last_event_id asignado: \" + response.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Concierto Rock 2028\",\n    \"date\": \"2028-06-15T20:00:00Z\",\n    \"venue\": \"Estadio Anastasio\",\n    \"totalCapacity\": 20000\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/events",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"events"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Consultar Eventos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/events",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"events"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Consultar Evento By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/events/{id}/availability",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"events",
+								"{id}",
+								"availability"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET http://localhost:8080/api/v1/events/{id}/availability"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{
+					"name": "Comprar Entradas",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 202) {",
+									"    const response = pm.response.json();",
+									"    if (response.id) {",
+									"        pm.collectionVariables.set(\"last_order_id\", response.id);",
+									"        console.log(\"✅ last_order_id asignado: \" + response.id);",
+									"    }",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"eventId\": \"{{last_event_id}}\",\n    \"userId\": \"user-001\",\n    \"quantity\": 10,\n    \"idempotencyKey\": \"compra-{{$timestamp}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders/purchase",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"purchase"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Consultar Estado Orden",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders/{{last_order_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"{{last_order_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Tickets de Cortesia",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 202) {",
+									"    const response = pm.response.json();",
+									"    if (response.id) {",
+									"        pm.collectionVariables.set(\"last_order_id\", response.id);",
+									"        console.log(\"✅ last_order_id asignado: \" + response.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"eventId\": \"{{last_event_id}}\",\n    \"userId\": \"user-vip-002\",\n    \"quantity\": 5,\n    \"idempotencyKey\": \"compra-321\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/orders/complimentary",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"complimentary"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST http://localhost:8080/api/v1/orders/complimentary \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"eventId\": \"abc-123-def-456\",\n    \"userId\": \"vip-user-999\",\n    \"quantity\": 1,\n    \"idempotencyKey\": \"comp-unique-uuid-here\"\n  }'"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080"
+		},
+		{
+			"key": "last_event_id",
+			"value": "ID_DEL_EVENTO_AQUI"
+		},
+		{
+			"key": "last_order_id",
+			"value": "ID_DE_LA_ORDEN_AQUI"
+		}
+	]
+}
