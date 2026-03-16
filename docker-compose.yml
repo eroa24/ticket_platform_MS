@@ -1,5 +1,5 @@
 # =====================================================
-# Docker Compose — Ticket Platform MS (Entorno Local)
+# Docker Compose — Ticket Platform MS
 # =====================================================
 # Servicios:
 #   1. dynamodb-local  → Amazon DynamoDB local (puerto 8000)
@@ -12,9 +12,6 @@ services:
   # -----------------------------------------------
   # DynamoDB Local
   # -----------------------------------------------
-  # Imagen oficial de Amazon. Simula DynamoDB completamente en memoria.
-  # Beneficio: No necesitas cuenta AWS, no hay costos, latencia ~0ms.
-  # Los datos se pierden al reiniciar (por diseño para dev).
   dynamodb-local:
     image: amazon/dynamodb-local:latest
     container_name: dynamodb-local
@@ -33,8 +30,6 @@ services:
   # -----------------------------------------------
   # LocalStack (SQS)
   # -----------------------------------------------
-  # Simula servicios AWS localmente. Solo habilitamos SQS.
-  # Beneficio: Cola de mensajes real sin infraestructura AWS.
   # El script init-localstack.sh crea la cola automáticamente al arrancar.
   localstack:
     image: localstack/localstack:latest
@@ -57,10 +52,9 @@ services:
       - ticketing-net
 
   # -----------------------------------------------
-  # Ticket Platform MS (App)
+  # Ticket Platform MS
   # -----------------------------------------------
   # El microservicio Spring Boot. Espera a que DynamoDB y SQS estén healthy
-  # antes de arrancar (depends_on + condition: service_healthy).
   app:
     build:
       context: .
