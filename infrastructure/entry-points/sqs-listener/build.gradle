@@ -3,4 +3,6 @@ dependencies {
     implementation project(':model')
     implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs'
     implementation 'io.projectreactor:reactor-core'
+
+    testImplementation 'io.projectreactor:reactor-test'
 }
