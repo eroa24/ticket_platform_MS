@@ -1,7 +1,9 @@
 package com.ticketing.web.handler;
 
+import com.ticketing.usecase.order.AssignComplimentaryUseCase;
 import com.ticketing.usecase.order.GetOrderStatusUseCase;
 import com.ticketing.usecase.order.InitiatePurchaseUseCase;
+import com.ticketing.web.dto.ComplimentaryRequest;
 import com.ticketing.web.dto.OrderResponse;
 import com.ticketing.web.dto.PurchaseRequest;
 import com.ticketing.web.validation.RequestValidator;
@@ -17,13 +19,16 @@ public class OrderHandler {
 
     private final InitiatePurchaseUseCase initiatePurchaseUseCase;
     private final GetOrderStatusUseCase getOrderStatusUseCase;
+    private final AssignComplimentaryUseCase assignComplimentaryUseCase;
     private final RequestValidator validator;
 
     public OrderHandler(InitiatePurchaseUseCase initiatePurchaseUseCase,
                         GetOrderStatusUseCase getOrderStatusUseCase,
+                        AssignComplimentaryUseCase assignComplimentaryUseCase,
                         RequestValidator validator) {
         this.initiatePurchaseUseCase = initiatePurchaseUseCase;
         this.getOrderStatusUseCase = getOrderStatusUseCase;
+        this.assignComplimentaryUseCase = assignComplimentaryUseCase;
         this.validator = validator;
     }
 
@@ -41,5 +46,14 @@ public class OrderHandler {
         return getOrderStatusUseCase.execute(orderId)
                 .map(OrderResponse::from)
                 .flatMap(order -> ServerResponse.ok().bodyValue(order));
+    }
+
+    public Mono<ServerResponse> assignComplimentary(ServerRequest request) {
+        return request.bodyToMono(ComplimentaryRequest.class)
+                .flatMap(validator::validate)
+                .flatMap(req -> assignComplimentaryUseCase.execute(
+                        req.eventId(), req.userId(), req.quantity(), req.idempotencyKey()))
+                .map(OrderResponse::from)
+                .flatMap(order -> ServerResponse.status(201).bodyValue(order));
     }
 }

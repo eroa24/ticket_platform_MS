@@ -6,12 +6,13 @@ public enum OrderStatus {
     PROCESSING,
     CONFIRMED,
     REJECTED,
-    EXPIRED;
+    EXPIRED,
+    COMPLIMENTARY;
 
     /**
      * Returns true if the order is in a terminal state and cannot be further modified.
      */
     public boolean isTerminal() {
-        return this == CONFIRMED || this == REJECTED || this == EXPIRED;
+        return this == CONFIRMED || this == REJECTED || this == EXPIRED || this == COMPLIMENTARY;
     }
 }

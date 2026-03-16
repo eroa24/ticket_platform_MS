@@ -16,6 +16,7 @@ public class OrderRouter {
         return RouterFunctions.route()
                 .path("/api/v1/orders", builder -> builder
                         .POST("/purchase", handler::initiatePurchase)
+                        .POST("/complimentary", handler::assignComplimentary)
                         .GET("/{id}", handler::getOrderStatus))
                 .build();
     }

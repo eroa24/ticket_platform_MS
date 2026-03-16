@@ -8,6 +8,7 @@ import com.ticketing.model.order.gateway.OrderGateway;
 import com.ticketing.model.order.gateway.OrderMessageGateway;
 import com.ticketing.usecase.event.CreateEventUseCase;
 import com.ticketing.usecase.event.GetEventAvailabilityUseCase;
+import com.ticketing.usecase.order.AssignComplimentaryUseCase;
 import com.ticketing.usecase.order.GetOrderStatusUseCase;
 import com.ticketing.usecase.order.InitiatePurchaseUseCase;
 import com.ticketing.usecase.order.ProcessPurchaseUseCase;
@@ -48,5 +49,11 @@ public class UseCaseConfig {
     public ReleaseExpiredReservationsUseCase releaseExpiredReservationsUseCase(
             OrderGateway orderGateway, EventGateway eventGateway) {
         return new ReleaseExpiredReservationsUseCase(orderGateway, eventGateway);
+    }
+
+    @Bean
+    public AssignComplimentaryUseCase assignComplimentaryUseCase(EventGateway eventGateway,
+                                                                 OrderGateway orderGateway) {
+        return new AssignComplimentaryUseCase(eventGateway, orderGateway);
     }
 }

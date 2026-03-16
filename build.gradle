@@ -17,6 +17,7 @@ allprojects {
 subprojects {
     apply plugin: 'java'
     apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'jacoco'
 
     java {
         toolchain {
@@ -44,8 +45,21 @@ subprojects {
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     }
 
+    jacoco {
+        toolVersion = "0.8.13"
+    }
+
     test {
+        finalizedBy jacocoTestReport
         useJUnitPlatform()
+    }
+
+    jacocoTestReport {
+        dependsOn test
+        reports {
+            xml.required = true
+            html.required = true
+        }
     }
 }
 

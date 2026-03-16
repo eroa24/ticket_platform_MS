@@ -13,7 +13,7 @@ public enum TicketStatus {
 
     private static final Map<TicketStatus, Set<TicketStatus>> ALLOWED_TRANSITIONS = Map.of(
             AVAILABLE, Set.of(RESERVED, COMPLIMENTARY),
-            RESERVED, Set.of(PENDING_CONFIRMATION, AVAILABLE),
+            RESERVED, Set.of(PENDING_CONFIRMATION, SOLD, AVAILABLE),
             PENDING_CONFIRMATION, Set.of(SOLD, AVAILABLE)
     );
 
