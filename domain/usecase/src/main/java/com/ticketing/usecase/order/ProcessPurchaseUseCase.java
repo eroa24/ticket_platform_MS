@@ -27,14 +27,6 @@ public class ProcessPurchaseUseCase {
     /**
      * Processes a purchase order received from the SQS queue.
      *
-     * Flow:
-     *   - Terminal orders (CONFIRMED, REJECTED, EXPIRED) are returned as-is (idempotent).
-     *   - Expired reservations are released back to inventory and marked EXPIRED.
-     *   - Active reservations are confirmed → tickets transition to SOLD.
-     *
-     * Note: ticket availability was already deducted atomically during reservation
-     * (InitiatePurchaseUseCase). This step only confirms the final sale state.
-     *
      * @param orderId the order to process
      * @return the processed order with updated status and ticketStatus
      */
@@ -50,11 +42,34 @@ public class ProcessPurchaseUseCase {
     }
 
     private Mono<PurchaseOrder> processOrder(PurchaseOrder order) {
-        return order.status().isTerminal()
+        return Mono.just(order)
+                .filter(o -> !o.status().isTerminal())
+                .flatMap(this::determineOrderFate)
+                .switchIfEmpty(Mono.just(order));
+    }
+
+    private Mono<PurchaseOrder> determineOrderFate(PurchaseOrder order) {
+        return order.isReservationExpired(DomainConstants.RESERVATION_TIMEOUT_MINUTES)
+                ? validateAndExpire(order)
+                : validateAndConfirm(order);
+    }
+
+    private Mono<PurchaseOrder> validateAndConfirm(PurchaseOrder order) {
+        return validateTransition(order, OrderStatus.CONFIRMED)
+                .flatMap(validOrder -> confirmOrder(validOrder));
+    }
+
+    private Mono<PurchaseOrder> validateAndExpire(PurchaseOrder order) {
+        return validateTransition(order, OrderStatus.EXPIRED)
+                .flatMap(validOrder -> expireAndReleaseOrder(validOrder));
+    }
+
+    private Mono<PurchaseOrder> validateTransition(PurchaseOrder order, OrderStatus nextStatus) {
+        var nextTicketStatus = PurchaseOrder.resolveTicketStatus(nextStatus);
+        return order.ticketStatus().canTransitionTo(nextTicketStatus)
                 ? Mono.just(order)
-                : order.isReservationExpired(DomainConstants.RESERVATION_TIMEOUT_MINUTES)
-                        ? expireAndReleaseOrder(order)
-                        : confirmOrder(order);
+                : Mono.defer(() -> Mono.error(BusinessErrorType.INVALID_STATE_TRANSITION
+                        .build(order.ticketStatus(), nextTicketStatus)));
     }
 
     private Mono<PurchaseOrder> confirmOrder(PurchaseOrder order) {
@@ -68,7 +83,7 @@ public class ProcessPurchaseUseCase {
      */
     private Mono<PurchaseOrder> expireAndReleaseOrder(PurchaseOrder order) {
         return releaseReservedTickets(order)
-                .then(markAsExpired(order));
+                .then(Mono.defer(() -> markAsExpired(order)));
     }
 
     private Mono<Void> releaseReservedTickets(PurchaseOrder order) {

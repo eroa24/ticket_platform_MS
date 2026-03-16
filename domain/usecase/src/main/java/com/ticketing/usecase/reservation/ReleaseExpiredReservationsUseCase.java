@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import com.ticketing.model.common.DomainConstants;
 import com.ticketing.model.event.gateway.EventGateway;
+import com.ticketing.model.exception.BusinessErrorType;
 import com.ticketing.model.order.OrderStatus;
 import com.ticketing.model.order.PurchaseOrder;
 import com.ticketing.model.order.gateway.OrderGateway;
@@ -25,10 +26,6 @@ public class ReleaseExpiredReservationsUseCase {
 
     /**
      * Scans for expired reservations and releases them.
-     *
-     * Reactive flow:
-     *   findExpiredReservations → for each: releaseTickets → markExpired
-     *
      * @return empty Mono signaling completion
      */
     public Mono<Void> execute() {
@@ -39,7 +36,7 @@ public class ReleaseExpiredReservationsUseCase {
 
     private Mono<PurchaseOrder> releaseAndExpire(PurchaseOrder expiredOrder) {
         return releaseTickets(expiredOrder)
-                .then(markAsExpired(expiredOrder))
+                .then(Mono.defer(() -> markAsExpired(expiredOrder)))
                 .doOnSuccess(order -> log.info("Released expired reservation: orderId={}, eventId={}, quantity={}",
                         order.id(), order.eventId(), order.quantity()))
                 .onErrorResume(error -> handleReleaseError(expiredOrder, error));
@@ -53,8 +50,19 @@ public class ReleaseExpiredReservationsUseCase {
     }
 
     private Mono<PurchaseOrder> markAsExpired(PurchaseOrder order) {
-        var expiredOrder = order.withStatus(OrderStatus.EXPIRED);
-        return orderGateway.updateStatus(expiredOrder, order.version());
+        return validateTransition(order, OrderStatus.EXPIRED)
+                .flatMap(validOrder -> {
+                    var expiredOrder = validOrder.withStatus(OrderStatus.EXPIRED);
+                    return orderGateway.updateStatus(expiredOrder, validOrder.version());
+                });
+    }
+
+    private Mono<PurchaseOrder> validateTransition(PurchaseOrder order, OrderStatus nextStatus) {
+        var nextTicketStatus = PurchaseOrder.resolveTicketStatus(nextStatus);
+        return order.ticketStatus().canTransitionTo(nextTicketStatus)
+                ? Mono.just(order)
+                : Mono.defer(() -> Mono.error(BusinessErrorType.INVALID_STATE_TRANSITION
+                        .build(order.ticketStatus(), nextTicketStatus)));
     }
 
     private Mono<PurchaseOrder> handleReleaseError(PurchaseOrder order, Throwable error) {

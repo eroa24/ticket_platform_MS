@@ -45,7 +45,7 @@ public class InitiatePurchaseUseCase {
      * Retries automatically on optimistic lock conflicts (concurrent purchase attempts).
      * Idempotency: returns the existing order if the idempotencyKey was already processed.
      *
-     * @param eventId        the event to purchase tickets for
+     * @param eventId        the event to
      * @param userId         the buyer's identifier
      * @param quantity       the number of tickets to purchase (1 to MAX_TICKETS_PER_PURCHASE)
      * @param idempotencyKey client-provided key to prevent duplicate orders
@@ -55,7 +55,7 @@ public class InitiatePurchaseUseCase {
                                        int quantity, String idempotencyKey) {
         return validateRequest(eventId, userId, quantity, idempotencyKey)
                 .then(checkIdempotency(idempotencyKey))
-                .switchIfEmpty(createNewOrder(eventId, userId, quantity, idempotencyKey)
+                .switchIfEmpty(Mono.defer(() -> createNewOrder(eventId, userId, quantity, idempotencyKey))
                         .retryWhen(retryOnOptimisticLockFailure()))
                 .doOnSubscribe(s -> log.info("Purchase initiated: eventId={}, quantity={}", eventId, quantity))
                 .doOnSuccess(order -> log.info("Purchase reserved: orderId={}, eventId={}, status={}, ticketStatus={}",

@@ -8,14 +8,14 @@ import com.ticketing.model.ticket.TicketStatus;
  * Domain model representing a purchase order for event tickets.
  *
  * @param id             unique order identifier
- * @param eventId        the event being purchased
- * @param userId         the user making the purchase
+ * @param eventId        the event id
+ * @param userId         the user id
  * @param quantity       number of tickets requested
- * @param status         current order processing status
- * @param ticketStatus   current ticket lifecycle state (RESERVED → SOLD or AVAILABLE)
+ * @param status         current order status
+ * @param ticketStatus   current ticket lifecycle state
  * @param idempotencyKey client-provided key to prevent duplicate processing
- * @param createdAt      timestamp when the order was created
- * @param updatedAt      timestamp of the last status change
+ * @param createdAt      timestamp created
+ * @param updatedAt      timestamp last status change
  * @param version        optimistic locking version for conditional writes
  */
 public record PurchaseOrder(
@@ -33,7 +33,6 @@ public record PurchaseOrder(
 
     /**
      * Factory method to create a new pending purchase order.
-     * Tickets enter RESERVED state immediately upon order creation.
      */
     public static PurchaseOrder create(String id, String eventId, String userId,
                                        int quantity, String idempotencyKey) {
@@ -43,9 +42,6 @@ public record PurchaseOrder(
     }
 
     /**
-     * Returns a copy of this order with an updated status and corresponding ticket state.
-     * Ticket state is derived automatically from the order status transition.
-     *
      * @param newStatus the new order status to transition to
      * @return new PurchaseOrder instance with updated status and ticketStatus
      */
@@ -66,21 +62,15 @@ public record PurchaseOrder(
     }
 
     /**
-     * Maps an OrderStatus to the corresponding TicketStatus in the ticket lifecycle.
-     * <ul>
-     *   <li>PENDING    → RESERVED            (tickets held, awaiting async processing)</li>
-     *   <li>PROCESSING → PENDING_CONFIRMATION (SQS consumer is actively confirming)</li>
-     *   <li>CONFIRMED  → SOLD                 (final, irreversible sale)</li>
-     *   <li>REJECTED   → AVAILABLE            (tickets released back to inventory)</li>
-     *   <li>EXPIRED    → AVAILABLE            (reservation timeout, tickets released)</li>
-     * </ul>
+     * Maps an {@link OrderStatus} to the corresponding {@link TicketStatus} in the ticket lifecycle.
      */
-    private static TicketStatus resolveTicketStatus(OrderStatus orderStatus) {
+    public static TicketStatus resolveTicketStatus(OrderStatus orderStatus) {
         return switch (orderStatus) {
             case PENDING -> TicketStatus.RESERVED;
             case PROCESSING -> TicketStatus.PENDING_CONFIRMATION;
             case CONFIRMED -> TicketStatus.SOLD;
             case REJECTED, EXPIRED -> TicketStatus.AVAILABLE;
+            case COMPLIMENTARY -> TicketStatus.COMPLIMENTARY;
         };
     }
 }
